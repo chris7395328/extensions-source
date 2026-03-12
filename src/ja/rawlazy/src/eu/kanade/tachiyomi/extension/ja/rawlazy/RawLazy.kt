@@ -21,7 +21,7 @@ import uy.kohesive.injekt.injectLazy
 
 /**
  * RawLazy 扩展
- * 
+ *
  * 实现 HttpSource 以从 https://rawlazy.io 抓取漫画
  */
 class RawLazy : HttpSource() {
@@ -47,22 +47,20 @@ class RawLazy : HttpSource() {
 
     // 创建热门漫画列表的请求。
     // 该网站使用分页，如 /page/1/, /page/2/ 等。
-    override fun popularMangaRequest(page: Int): Request {
-        return GET("$baseUrl/page/$page/", headers)
-    }
+    override fun popularMangaRequest(page: Int): Request = GET("$baseUrl/page/$page/", headers)
 
     // 解析热门漫画请求的响应。
     override fun popularMangaParse(response: Response): MangasPage {
         val document = response.asJsoup()
-        
+
         // 使用 CSS 选择器查找所有漫画元素
         val mangas = document.select(popularMangaSelector()).map { element ->
             popularMangaFromElement(element)
         }
-        
+
         // 检查是否有下一页按钮
         val hasNextPage = document.select(popularMangaNextPageSelector()).isNotEmpty()
-        
+
         return MangasPage(mangas, hasNextPage)
     }
 
@@ -70,14 +68,12 @@ class RawLazy : HttpSource() {
     private fun popularMangaSelector() = ".row-of-mangas .col-sm-6"
 
     // 从单个元素中提取漫画详情（标题、缩略图、URL）
-    private fun popularMangaFromElement(element: Element): SManga {
-        return SManga.create().apply {
-            val anchor = element.selectFirst("a.thumb")!!
-            setUrlWithoutDomain(anchor.attr("href"))
-            // 标题通常在锚点的 title 属性中或在 .name a 内部
-            title = element.selectFirst(".name a")?.text() ?: anchor.attr("title")
-            thumbnail_url = anchor.selectFirst("img")?.attr("src")
-        }
+    private fun popularMangaFromElement(element: Element): SManga = SManga.create().apply {
+        val anchor = element.selectFirst("a.thumb")!!
+        setUrlWithoutDomain(anchor.attr("href"))
+        // 标题通常在锚点的 title 属性中或在 .name a 内部
+        title = element.selectFirst(".name a")?.text() ?: anchor.attr("title")
+        thumbnail_url = anchor.selectFirst("img")?.attr("src")
     }
 
     // 用于查找分页“下一页”按钮的 CSS 选择器
@@ -86,7 +82,7 @@ class RawLazy : HttpSource() {
     // ==============================
     // 最新更新
     // ==============================
-    
+
     // 最新更新的网站结构与热门漫画相同
     override fun latestUpdatesRequest(page: Int): Request = popularMangaRequest(page)
 
@@ -110,20 +106,18 @@ class RawLazy : HttpSource() {
     // ==============================
 
     // 解析漫画详情页面以提取信息，如作者、描述、类型
-    override fun mangaDetailsParse(document: Document): SManga {
-        return SManga.create().apply {
-            // 定位漫画信息的主要容器
-            val infoElement = document.selectFirst(".py-3.py-lg-6.bg-primary .container")
-            
-            title = infoElement?.selectFirst("h1.font-bold")?.text() ?: "Unknown"
-            author = "Unknown" // 作者信息在页面上不明显
-            artist = "Unknown"
-            // 提取类型并用逗号连接
-            genre = infoElement?.select(".genres-wrap a")?.joinToString { it.text() }
-            description = infoElement?.selectFirst(".content-text")?.text()
-            status = SManga.UNKNOWN
-            thumbnail_url = infoElement?.selectFirst("img.thumb")?.attr("src")
-        }
+    override fun mangaDetailsParse(document: Document): SManga = SManga.create().apply {
+        // 定位漫画信息的主要容器
+        val infoElement = document.selectFirst(".py-3.py-lg-6.bg-primary .container")
+
+        title = infoElement?.selectFirst("h1.font-bold")?.text() ?: "Unknown"
+        author = "Unknown" // 作者信息在页面上不明显
+        artist = "Unknown"
+        // 提取类型并用逗号连接
+        genre = infoElement?.select(".genres-wrap a")?.joinToString { it.text() }
+        description = infoElement?.selectFirst(".content-text")?.text()
+        status = SManga.UNKNOWN
+        thumbnail_url = infoElement?.selectFirst("img.thumb")?.attr("src")
     }
 
     // ==============================
@@ -139,12 +133,10 @@ class RawLazy : HttpSource() {
 
     private fun chapterListSelector() = ".chapters-list a"
 
-    private fun chapterFromElement(element: Element): SChapter {
-        return SChapter.create().apply {
-            setUrlWithoutDomain(element.attr("href"))
-            name = element.selectFirst("span.font-bold")?.text() ?: element.text()
-            // 省略日期解析，因为该网站似乎不标准
-        }
+    private fun chapterFromElement(element: Element): SChapter = SChapter.create().apply {
+        setUrlWithoutDomain(element.attr("href"))
+        name = element.selectFirst("span.font-bold")?.text() ?: element.text()
+        // 省略日期解析，因为该网站似乎不标准
     }
 
     // ==============================
@@ -157,7 +149,7 @@ class RawLazy : HttpSource() {
         // 1. 从页面脚本中提取必要的变量（nonce, ajax_url）
         val script = document.selectFirst("script:containsData(zing.nonce)")?.data()
             ?: throw Exception("未找到 Nonce 脚本")
-        
+
         val nonce = Regex("""nonce":"(.*?)"""").find(script)?.groupValues?.get(1)
             ?: throw Exception("未找到 Nonce")
         val ajaxUrl = Regex("""ajax_url":"(.*?)"""").find(script)?.groupValues?.get(1)?.replace("\\/", "/")
@@ -166,7 +158,7 @@ class RawLazy : HttpSource() {
         // 2. 提取章节特定的变量（p, chapter_id）
         val chapterScript = document.selectFirst("script:containsData(chapter_id)")?.data()
             ?: throw Exception("未找到章节脚本")
-        
+
         val p = Regex("""p:\s*(\d+)""").find(chapterScript)?.groupValues?.get(1)
             ?: throw Exception("未找到 Post ID (p)")
         val chapterId = Regex("""chapter_id:\s*'([^']*)'""").find(chapterScript)?.groupValues?.get(1)
@@ -176,15 +168,15 @@ class RawLazy : HttpSource() {
         var imgIndex = 0
         var content = "" // 累积 HTML 内容
         var going = 1 // 继续获取的标志
-        
+
         // 安全限制以防止出错时无限循环
         var loopCount = 0
-        val maxLoops = 20 
+        val maxLoops = 20
 
         // 3. 循环获取所有图片块
         while (going == 1 && loopCount < maxLoops) {
             loopCount++
-            
+
             // 构建 POST 请求体
             val formBody = FormBody.Builder()
                 .add("action", "z_do_ajax")
@@ -198,18 +190,18 @@ class RawLazy : HttpSource() {
 
             val request = POST(ajaxUrl, headers, formBody)
             val response = client.newCall(request).execute()
-            
+
             if (!response.isSuccessful) break
-            
+
             // 解析 JSON 响应
             val jsonString = response.body.string()
             val jsonObject = json.decodeFromString<JsonObject>(jsonString)
-            
+
             // 提取包含图片的 HTML 片段
             val mes = jsonObject["mes"]?.jsonPrimitive?.content ?: ""
             // 检查是否还有更多图片需要加载
             going = jsonObject["going"]?.jsonPrimitive?.intOrNull ?: 0
-            
+
             // 为下一个请求更新 img_index
             imgIndex = jsonObject["img_index"]?.jsonPrimitive?.intOrNull ?: (imgIndex + 1)
 
