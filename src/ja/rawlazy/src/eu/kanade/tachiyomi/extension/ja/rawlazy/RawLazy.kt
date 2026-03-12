@@ -94,8 +94,7 @@ class RawLazy : HttpSource() {
 
     // 创建搜索漫画的请求。
     // 使用查询参数 's_manga'
-    override fun searchMangaRequest(page: Int, query: String, filters: FilterList): Request =
-        GET("$baseUrl/?s_manga=$query", headers)
+    override fun searchMangaRequest(page: Int, query: String, filters: FilterList): Request = GET("$baseUrl/?s_manga=$query", headers)
 
     // 解析搜索结果与解析热门列表相同
     override fun searchMangaParse(response: Response): MangasPage = popularMangaParse(response)
