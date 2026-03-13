@@ -129,15 +129,20 @@ class MangaParkPublisher : HttpSource() {
             throw Exception("You need to purchase this chapter.")
         }
 
-        val images = chapters.flatMap { it.images }.map { image ->
+        val images = mutableListOf<ApiImage>()
+        chapters.forEach { chapter ->
+            images.addAll(chapter.images)
+        }
+
+        val imageUrls = images.map { image ->
             image.path.toHttpUrl().newBuilder()
                 .fragment(image.key)
                 .build()
                 .toString()
         }
 
-        return images.mapIndexed { i, url ->
-            Page(i, imageUrl = url)
+        return imageUrls.mapIndexed { index, url ->
+            Page(index, imageUrl = url)
         }
     }
 
