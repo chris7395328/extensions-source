@@ -116,20 +116,18 @@ class RawLazy : HttpSource() {
     // ==============================
 
     // 解析漫画详情页面以提取信息，如作者、描述、类型
-    override fun mangaDetailsParse(document: Document): SManga {
-        return SManga.create().apply {
-            // 定位漫画信息的主要容器
-            val infoElement = document.selectFirst(".py-3.py-lg-6.bg-primary .container")
+    override fun mangaDetailsParse(document: Document): SManga = SManga.create().apply {
+        // 定位漫画信息的主要容器
+        val infoElement = document.selectFirst(".py-3.py-lg-6.bg-primary .container")
 
-            title = infoElement?.selectFirst("h1.font-bold")?.text() ?: "Unknown"
-            author = "Unknown" // 作者信息在页面上不明显
-            artist = "Unknown"
-            // 提取类型并用逗号连接
-            genre = infoElement?.select(".genres-wrap a")?.joinToString { it.text() }
-            description = infoElement?.selectFirst(".content-text")?.text()
-            status = SManga.UNKNOWN
-            thumbnail_url = infoElement?.selectFirst("img.thumb")?.attr("src")
-        }
+        title = infoElement?.selectFirst("h1.font-bold")?.text() ?: "Unknown"
+        author = "Unknown" // 作者信息在页面上不明显
+        artist = "Unknown"
+        // 提取类型并用逗号连接
+        genre = infoElement?.select(".genres-wrap a")?.joinToString { it.text() }
+        description = infoElement?.selectFirst(".content-text")?.text()
+        status = SManga.UNKNOWN
+        thumbnail_url = infoElement?.selectFirst("img.thumb")?.attr("src")
     }
 
     // ==============================
@@ -137,11 +135,7 @@ class RawLazy : HttpSource() {
     // ==============================
 
     // 从漫画详情页面解析章节列表
-    override fun chapterListParse(response: Response): List<SChapter> {
-        val document = response.asJsoup()
-        // 将每个章节元素映射到 SChapter 对象
-        return document.select(chapterListSelector()).map { chapterFromElement(it) }
-    }
+    override fun chapterListParse(response: Response): List<SChapter> = response.asJsoup().select(chapterListSelector()).map { chapterFromElement(it) }
 
     private fun chapterListSelector() = ".chapters-list a"
 
