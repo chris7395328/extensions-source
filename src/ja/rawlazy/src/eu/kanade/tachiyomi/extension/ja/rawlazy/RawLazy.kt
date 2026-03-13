@@ -12,9 +12,12 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.decodeFromString
 import okhttp3.FormBody
+import okhttp3.Headers
 import okhttp3.Request
 import okhttp3.Response
+import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
 import uy.kohesive.injekt.injectLazy
@@ -40,6 +43,15 @@ class RawLazy : HttpSource() {
 
     // 用于处理 API 响应的 JSON 解析器
     private val json: Json by injectLazy()
+
+    // HTTP 请求的默认头部
+    override val headers: Headers
+        get() {
+            return Headers.Builder()
+                .add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
+                .add("Referer", baseUrl)
+                .build()
+        }
 
     // ==============================
     // 热门漫画（浏览）
