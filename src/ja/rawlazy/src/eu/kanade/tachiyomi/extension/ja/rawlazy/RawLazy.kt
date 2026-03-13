@@ -215,7 +215,7 @@ class RawLazy : HttpSource() {
             content += mes
 
             // 从接收到的 HTML 片段中解析图片
-            val fragment = org.jsoup.Jsoup.parseBodyFragment(mes)
+            val fragment = Jsoup.parseBodyFragment(mes)
             fragment.select("img").forEach { img ->
                 val src = img.attr("src")
                 // 过滤掉加载指示器
