@@ -8,6 +8,7 @@ import eu.kanade.tachiyomi.source.model.Page
 import eu.kanade.tachiyomi.source.model.SChapter
 import eu.kanade.tachiyomi.source.model.SManga
 import eu.kanade.tachiyomi.source.online.HttpSource
+import eu.kanade.tachiyomi.util.asJsoup
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
@@ -45,13 +46,9 @@ class RawLazy : HttpSource() {
     private val json: Json by injectLazy()
 
     // HTTP 请求的默认头部
-    override val headers: Headers
-        get() {
-            return Headers.Builder()
-                .add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
-                .add("Referer", baseUrl)
-                .build()
-        }
+    override fun headersBuilder() = Headers.Builder()
+        .add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
+        .add("Referer", baseUrl)
 
     // ==============================
     // 热门漫画（浏览）
@@ -116,7 +113,8 @@ class RawLazy : HttpSource() {
     // ==============================
 
     // 解析漫画详情页面以提取信息，如作者、描述、类型
-    override fun mangaDetailsParse(document: Document): SManga = SManga.create().apply {
+    override fun mangaDetailsParse(response: Response): SManga = SManga.create().apply {
+        val document = response.asJsoup()
         // 定位漫画信息的主要容器
         val infoElement = document.selectFirst(".py-3.py-lg-6.bg-primary .container")
 
@@ -151,7 +149,8 @@ class RawLazy : HttpSource() {
 
     // 这是复杂的部分。该网站通过 AJAX 请求加载图片。
     // 我们需要模拟 JavaScript 逻辑来获取图片 URL。
-    override fun pageListParse(document: Document): List<Page> {
+    override fun pageListParse(response: Response): List<Page> {
+        val document = response.asJsoup()
         // 1. 从页面脚本中提取必要的变量（nonce, ajax_url）
         val script = document.selectFirst("script:containsData(zing.nonce)")?.data()
             ?: throw Exception("未找到 Nonce 脚本")
@@ -195,12 +194,12 @@ class RawLazy : HttpSource() {
                 .build()
 
             val request = POST(ajaxUrl, headers, formBody)
-            val response = client.newCall(request).execute()
+            val ajaxResponse = client.newCall(request).execute()
 
-            if (!response.isSuccessful) break
+            if (!ajaxResponse.isSuccessful) break
 
             // 解析 JSON 响应
-            val jsonString = response.body.string()
+            val jsonString = ajaxResponse.body.string()
             val jsonObject = json.decodeFromString<JsonObject>(jsonString)
 
             // 提取包含图片的 HTML 片段
@@ -228,5 +227,5 @@ class RawLazy : HttpSource() {
         return pageList
     }
 
-    override fun imageUrlParse(document: Document): String = throw UnsupportedOperationException("未使用")
+    override fun imageUrlParse(response: Response): String = throw UnsupportedOperationException("未使用")
 }
